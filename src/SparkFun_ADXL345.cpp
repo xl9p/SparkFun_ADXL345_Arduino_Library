@@ -18,11 +18,7 @@ Arduino 1.6.8
 SparkFun Triple Axis Accelerometer Breakout - ADXL345
 Arduino Uno
 */
-
-#include "Arduino.h"
 #include "SparkFun_ADXL345.h"
-#include <Wire.h>
-#include <SPI.h>
 
 #define ADXL345_DEVICE (0x53)    // Device Address for ADXL345
 #define ADXL345_TO_READ (6)      // Number of Bytes Read - Two Bytes Per Axis
@@ -35,6 +31,24 @@ ADXL345::ADXL345() {
 	gains[1] = 0.00376009;		// Original gain 0.00376009
 	gains[2] = 0.00349265;		// Original gain 0.00349265
 	I2C = true;
+}
+
+
+
+ADXL345::ADXL345(TwoWire *theWire) {
+        status = ADXL345_OK;
+        status = ADXL345_OK;
+        error_code = ADXL345_NO_ERROR;
+        error_code = ADXL345_NO_ERROR;
+        gains[0] = 0.00376390;                // Original gain 0.00376390
+        gains[0] = 0.00376390;                // Original gain 0.00376390
+        gains[1] = 0.00376009;                // Original gain 0.00376009
+        gains[1] = 0.00376009;                // Original gain 0.00376009
+        gains[2] = 0.00349265;                // Original gain 0.00349265
+        gains[2] = 0.00349265;                // Original gain 0.00349265
+        I2C = true;
+        I2C = true;
+        _wire = theWire;
 }
 
 ADXL345::ADXL345(int CS) {
@@ -53,13 +67,22 @@ ADXL345::ADXL345(int CS) {
 }
 
 void ADXL345::powerOn() {
-	if(I2C) {
-		Wire.begin();				// If in I2C Mode Only
-	}
+	//!MODIFIED
+        if(I2C) {// If in I2C Mode Only
+                if (this->_wire) {                                
+                        this->_wire->begin(); // Use custom I2C configuration
+                } else {
+                        Serial.println("I2C object is null");
+                        if (Wire) {
+                        	Wire.begin();
+                        }
+                }
+        }
 	//ADXL345 TURN ON
 	writeTo(ADXL345_POWER_CTL, 0);	// Wakeup
 	writeTo(ADXL345_POWER_CTL, 16);	// Auto_Sleep
 	writeTo(ADXL345_POWER_CTL, 8);	// Measure
+	//!---------------------------------------------------------------------
 }
 
 
@@ -112,34 +135,64 @@ void ADXL345::readFrom(byte address, int num, byte _buff[]) {
 /*************************** WRITE TO I2C ***************************/
 /*      Start; Send Register Address; Send Value To Write; End      */
 void ADXL345::writeToI2C(byte _address, byte _val) {
-	Wire.beginTransmission(ADXL345_DEVICE);
-	Wire.write(_address);
-	Wire.write(_val);
-	Wire.endTransmission();
+	//!MODIFIED
+	if (this->_wire) {
+		this->_wire->beginTransmission(ADXL345_DEVICE);
+		this->_wire->write(_address);
+		this->_wire->write(_val);
+		this->_wire->endTransmission();
+		return;
+	} else {
+		Wire.beginTransmission(ADXL345_DEVICE);
+		Wire.write(_address);
+		Wire.write(_val);
+		Wire.endTransmission();
+		return;
+	}
+	//!-------------------------------------------------------
 }
 
 /*************************** READ FROM I2C **************************/
 /*                Start; Send Address To Read; End                  */
 void ADXL345::readFromI2C(byte address, int num, byte _buff[]) {
-	Wire.beginTransmission(ADXL345_DEVICE);
-	Wire.write(address);
-	Wire.endTransmission();
+	//!MODIFIED
+	if (this->_wire) {
+		this->_wire->beginTransmission(ADXL345_DEVICE);
+		this->_wire->write(address);
+		this->_wire->endTransmission();
 
-//	Wire.beginTransmission(ADXL345_DEVICE);
-// Wire.reqeustFrom contains the beginTransmission and endTransmission in it. 
-	Wire.requestFrom(ADXL345_DEVICE, num);  // Request 6 Bytes
+		this->_wire->requestFrom(ADXL345_DEVICE, num);  // Request 6 Bytes
 
-	int i = 0;
-	while(Wire.available())
-	{
-		_buff[i] = Wire.read();				// Receive Byte
-		i++;
+		int i = 0;
+		while(this->_wire->available())
+		{
+			_buff[i] = this->_wire->read();				// Receive Byte
+			i++;
+		}
+		if(i != num){
+			status = ADXL345_ERROR;
+			error_code = ADXL345_READ_ERROR;
+		}
+	} else {
+		Wire.beginTransmission(ADXL345_DEVICE);
+		Wire.write(address);
+		Wire.endTransmission();
+
+		Wire.requestFrom(ADXL345_DEVICE, num);  // Request 6 Bytes
+
+		int i = 0;
+		while(Wire.available())
+		{
+			_buff[i] = Wire.read();				// Receive Byte
+			i++;
+		}
+		if(i != num){
+			status = ADXL345_ERROR;
+			error_code = ADXL345_READ_ERROR;
+		}
+	
 	}
-	if(i != num){
-		status = ADXL345_ERROR;
-		error_code = ADXL345_READ_ERROR;
-	}
-//	Wire.endTransmission();
+	//!------------------------------------------------------------
 }
 
 /************************** WRITE FROM SPI **************************/

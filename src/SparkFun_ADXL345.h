@@ -16,7 +16,11 @@ SparkFun Triple Axis Accelerometer Breakout - ADXL345
 Arduino Uno
 */
 
-#include "Arduino.h"
+#include <Arduino.h>
+//!MODIFIED
+#include <Wire.h>
+#include <SPI.h>
+//!-----------------------------
 
 #ifndef ADXL345_h
 #define ADXL345_h
@@ -114,7 +118,11 @@ public:
 	byte error_code;				// Initial State
 	double gains[3];				// Counts to Gs
 	
+	
 	ADXL345();
+	//!MODIFIED
+	ADXL345(TwoWire *theWire = &Wire); 
+	//!-------------------------------------
 	ADXL345(int CS);
 	void powerOn();
 	void readAccel(int* xyx);
@@ -231,6 +239,9 @@ private:
 	int _CS = 10;
 	bool I2C = true;
 	unsigned long SPIfreq = 5000000;
+	//!MODIFIED
+	TwoWire *_wire = NULL;
+	//!-------------------------------
 };
 void print_byte(byte val);
 #endif
