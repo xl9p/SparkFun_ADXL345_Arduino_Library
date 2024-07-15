@@ -73,9 +73,7 @@ void ADXL345::powerOn() {
                         this->_wire->begin(); // Use custom I2C configuration
                 } else {
                         Serial.println("I2C object is null");
-                        if (Wire) {
-                        	Wire.begin();
-                        }
+						Wire.begin();
                 }
         }
 	//ADXL345 TURN ON
